@@ -1,0 +1,17 @@
+{
+	"$schema":"node_modules/wrangler/config-schema.json",
+	"name":"bulls-cows-api",
+	"main":"src/index.ts",
+	"compatibility_date":"2026-05-15",
+	"assets":{
+		"directory":"./public",
+		"binding":"ASSETS",
+		"not_found_handling":"single-page-application"
+	},
+	"vars":{
+		"CORS_ORIGIN":"*",
+		"TOKEN_TTL_SEC":"86400",
+		"EXACT_THRESHOLD":"3000",
+		"MINIMAX_FALLBACK":"first_remaining"
+	}
+}

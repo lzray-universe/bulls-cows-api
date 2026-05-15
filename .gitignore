@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+dist/
+target/
+crates/*/pkg/
+build/
+.wrangler/
+.env
+clang-format.exe
+*.log
+*.tmp

@@ -1,0 +1,18 @@
+{
+	"name":"bulls-cows-api-monorepo",
+	"private":true,
+	"scripts":{
+		"build":"pnpm -C apps/worker build",
+		"build:wasm":"wasm-pack build crates/worker_wasm --target web --out-dir ../../apps/worker/src/wasm/pkg",
+		"dev":"pnpm -C apps/worker dev",
+		"deploy":"pnpm -C apps/worker deploy",
+		"test":"pnpm -C apps/worker test && cargo test --manifest-path crates/core/Cargo.toml",
+		"inspect":"pnpm -C tools/asset-inspect start"
+	},
+	"devDependencies":{
+		"typescript":"^5.8.3"
+	},
+	"pnpm":{
+		"onlyBuiltDependencies":["esbuild","workerd","sharp"]
+	}
+}

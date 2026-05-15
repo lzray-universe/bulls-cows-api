@@ -1,0 +1,9 @@
+{
+	"name":"@bc/asset-inspect",
+	"private":true,
+	"type":"module",
+	"scripts":{
+		"start":"tsx src/index.ts"
+	},
+	"devDependencies":{"tsx":"^4.19.4","typescript":"^5.8.3"}
+}

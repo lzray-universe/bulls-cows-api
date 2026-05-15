@@ -1,0 +1,55 @@
+{
+	"version": 1,
+	"format": "bc-assets-v1",
+	"generatedAt": null,
+	"ns": {
+		"n3": {
+			"candidateCount": 720,
+			"feedbackCount": 9,
+			"files": [
+				"assets/bc/v1/n3/candidates.bin"
+			]
+		},
+		"n4": {
+			"candidateCount": 5040,
+			"feedbackCount": 14,
+			"files": [
+				"assets/bc/v1/n4/candidates.bin"
+			]
+		},
+		"n5": {
+			"candidateCount": 30240,
+			"feedbackCount": 20,
+			"files": [
+				"assets/bc/v1/n5/candidates.bin"
+			]
+		},
+		"n6": {
+			"candidateCount": 151200,
+			"feedbackCount": 27,
+			"files": [
+				"assets/bc/v1/n6/candidates.bin"
+			]
+		}
+	},
+	"trees": {
+		"n3:first_remaining": {
+			"n": 3,
+			"strategy": "first_remaining",
+			"nodeCount": 1117,
+			"hash": "334d8a9aa5914dec",
+			"parts": [
+				"assets/bc/v1/n3/tree.first_remaining.part000.bin"
+			]
+		},
+		"n4:optimal": {
+			"n": 4,
+			"strategy": "optimal",
+			"nodeCount": 6569,
+			"hash": "84b33620780ef0e2",
+			"parts": [
+				"assets/bc/v1/n4/tree.optimal.part000.bin"
+			]
+		}
+	}
+}

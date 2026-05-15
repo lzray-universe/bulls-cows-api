@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "tools/asset-inspect"
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true

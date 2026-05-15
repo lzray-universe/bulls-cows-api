@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.20)
+project(bc_precompute LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(precompute
+	src/main.cpp
+)
+target_include_directories(precompute PRIVATE src)
+add_executable(test_feedback tests/test_feedback.cpp)
+target_include_directories(test_feedback PRIVATE src)
+add_executable(test_pack tests/test_pack.cpp)
+target_include_directories(test_pack PRIVATE src)
+enable_testing()
+add_test(NAME feedback COMMAND test_feedback)
+add_test(NAME pack COMMAND test_pack)

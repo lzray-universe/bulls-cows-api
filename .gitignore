@@ -5,6 +5,7 @@ target/
 crates/*/pkg/
 build/
 .wrangler/
+.wrangler-tmp/
 .env
 clang-format.exe
 *.log

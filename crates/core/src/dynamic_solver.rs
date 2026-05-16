@@ -69,7 +69,7 @@ fn first_remaining(n:u8,rem:&[Candidate])->Result<(usize,usize),BcError> {
 	Ok((idx,0))
 }
 
-fn minimax(n:u8,rem:&[Candidate])->Result<(usize,usize),BcError> {
+fn score_guess(n:u8,rem:&[Candidate],strategy:Strategy)->Result<(usize,usize),BcError> {
 	let all=enumerate(n)?;
 	let r=feedback_pairs(n)?.len();
 	let mut in_rem=vec![false;all.len()];
@@ -80,6 +80,7 @@ fn minimax(n:u8,rem:&[Candidate])->Result<(usize,usize),BcError> {
 	let mut best_idx=usize::MAX;
 	let mut best_max=usize::MAX;
 	let mut best_sq=u128::MAX;
+	let mut best_parts=0usize;
 	let mut best_in=false;
 	for (idx,g) in all.iter().enumerate() {
 		let mut bucket=vec![0usize;r];
@@ -90,15 +91,29 @@ fn minimax(n:u8,rem:&[Candidate])->Result<(usize,usize),BcError> {
 		}
 		let maxb=*bucket.iter().max().unwrap_or(&0);
 		let sq=bucket.iter().map(|&x| (x as u128)*(x as u128)).sum::<u128>();
+		let parts=bucket.iter().filter(|&&x| x>0).count();
 		let isin=in_rem[idx];
-		let better=maxb<best_max ||
-			(maxb==best_max && isin && !best_in) ||
-			(maxb==best_max && isin==best_in && sq<best_sq) ||
-			(maxb==best_max && isin==best_in && sq==best_sq && idx<best_idx);
+		let better=match strategy {
+			Strategy::MinimaxWorstBucket=>maxb<best_max ||
+				(maxb==best_max && isin && !best_in) ||
+				(maxb==best_max && isin==best_in && sq<best_sq) ||
+				(maxb==best_max && isin==best_in && sq==best_sq && idx<best_idx),
+			Strategy::ExpectedSize=>sq<best_sq ||
+				(sq==best_sq && isin && !best_in) ||
+				(sq==best_sq && isin==best_in && maxb<best_max) ||
+				(sq==best_sq && isin==best_in && maxb==best_max && idx<best_idx),
+			Strategy::FeedbackCount=>parts>best_parts ||
+				(parts==best_parts && isin && !best_in) ||
+				(parts==best_parts && isin==best_in && maxb<best_max) ||
+				(parts==best_parts && isin==best_in && maxb==best_max && sq<best_sq) ||
+				(parts==best_parts && isin==best_in && maxb==best_max && sq==best_sq && idx<best_idx),
+			Strategy::FirstRemaining=>false,
+		};
 		if better {
 			best_idx=idx;
 			best_max=maxb;
 			best_sq=sq;
+			best_parts=parts;
 			best_in=isin;
 		}
 	}
@@ -125,7 +140,7 @@ pub fn next_dynamic(n:u8,strategy:Strategy,hist:&[HistItem],opt:SolveOptions)->R
 			let (idx,mb)=first_remaining(n,&rem)?;
 			(idx,mb,false)
 		}
-		Strategy::MinimaxWorstBucket=>{
+		Strategy::MinimaxWorstBucket|Strategy::ExpectedSize|Strategy::FeedbackCount=>{
 			if rem.len()>opt.exact_threshold {
 				if opt.allow_fallback {
 					let (idx,mb)=first_remaining(n,&rem)?;
@@ -134,7 +149,7 @@ pub fn next_dynamic(n:u8,strategy:Strategy,hist:&[HistItem],opt:SolveOptions)->R
 					return Err(BcError::NeedTreeOrApprox);
 				}
 			}else{
-				let (idx,mb)=minimax(n,&rem)?;
+				let (idx,mb)=score_guess(n,&rem,strategy)?;
 				(idx,mb,false)
 			}
 		}

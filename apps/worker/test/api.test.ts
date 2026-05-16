@@ -56,6 +56,34 @@ describe("api",()=>{
 		expect(json.data.answer).toBe("0123");
 	});
 
+	it("strategies endpoint includes new metrics",async()=>{
+		const res=await route(new Request("https://x.test/api/strategies"),env);
+		const json=await res.json() as any;
+		expect(json.ok).toBe(true);
+		expect(json.data.strategies.map((x:any)=>x.name)).toContain("expected_size");
+		expect(json.data.strategies.map((x:any)=>x.name)).toContain("feedback_count");
+	});
+
+	it("dynamic expected size and feedback count",async()=>{
+		const cases=[
+			["expected_size","0145"],
+			["feedback_count","0245"]
+		];
+		for (const [strategy,nextGuess] of cases) {
+			const res=await route(req("/api/solve/next",{
+				n:4,
+				mode:"dynamic",
+				strategy,
+				history:[{guess:"0123",a:1,b:1}],
+				options:{exactThreshold:1000}
+			}),env);
+			const json=await res.json() as any;
+			expect(json.ok).toBe(true);
+			expect(json.data.nextGuess).toBe(nextGuess);
+			expect(json.data.remaining).toBe(720);
+		}
+	});
+
 	it("bad input",async()=>{
 		const res=await route(req("/api/feedback",{n:4,secret:"1123",guess:"1324"}),env);
 		const json=await res.json() as any;

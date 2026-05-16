@@ -5,6 +5,8 @@ use serde::{Deserialize,Serialize};
 pub enum Strategy {
 	FirstRemaining,
 	MinimaxWorstBucket,
+	ExpectedSize,
+	FeedbackCount,
 }
 
 impl Strategy {
@@ -12,6 +14,8 @@ impl Strategy {
 		match s {
 			"first_remaining"=>Some(Self::FirstRemaining),
 			"minimax_worst_bucket"=>Some(Self::MinimaxWorstBucket),
+			"expected_size"=>Some(Self::ExpectedSize),
+			"feedback_count"=>Some(Self::FeedbackCount),
 			_=>None,
 		}
 	}
@@ -20,6 +24,8 @@ impl Strategy {
 		match self {
 			Self::FirstRemaining=>1,
 			Self::MinimaxWorstBucket=>2,
+			Self::ExpectedSize=>3,
+			Self::FeedbackCount=>4,
 		}
 	}
 }

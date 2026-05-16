@@ -35,6 +35,8 @@ function read_header(buf:ArrayBuffer):TreeHeader {
 function sid(strategy:Strategy):number {
 	if (strategy==="first_remaining") return 1;
 	if (strategy==="minimax_worst_bucket") return 2;
+	if (strategy==="expected_size") return 3;
+	if (strategy==="feedback_count") return 4;
 	return 100;
 }
 

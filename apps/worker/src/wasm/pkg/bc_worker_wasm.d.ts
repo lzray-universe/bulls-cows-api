@@ -7,6 +7,10 @@ export function filter_candidates(n: number, history_json: string): string;
 
 export function next_dynamic(n: number, strategy: string, history_json: string, options_json: string): string;
 
+export function next_dynamic_fast(n: number, strategy: string, history_json: string, exact_threshold: number, allow_fallback: boolean): string;
+
+export function next_dynamic_packed(n: number, strategy_id: number, guesses: Uint32Array, as_: Uint8Array, bs: Uint8Array, exact_threshold: number, allow_fallback: boolean): string;
+
 export function validate_guess(n: number, guess: string): boolean;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -16,6 +20,8 @@ export interface InitOutput {
     readonly feedback: (a: number, b: number, c: number, d: number, e: number) => [number, number, number, number];
     readonly filter_candidates: (a: number, b: number, c: number) => [number, number, number, number];
     readonly next_dynamic: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
+    readonly next_dynamic_fast: (a: number, b: number, c: number, d: number, e: number, f: number, g: number) => [number, number, number, number];
+    readonly next_dynamic_packed: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: number) => [number, number, number, number];
     readonly validate_guess: (a: number, b: number, c: number) => [number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

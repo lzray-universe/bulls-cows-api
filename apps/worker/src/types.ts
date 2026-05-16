@@ -1,6 +1,7 @@
 export type N=3|4|5|6;
 export type Mode="tree"|"dynamic";
-export type Strategy="first_remaining"|"minimax_worst_bucket"|"optimal";
+export type Engine="js"|"wasm";
+export type Strategy="first_remaining"|"minimax_worst_bucket"|"expected_size"|"feedback_count"|"optimal";
 
 export interface Env {
 	ASSETS:Fetcher;
@@ -27,11 +28,13 @@ export interface SolveOptions {
 	allowFallback?:boolean;
 	exactThreshold?:number;
 	sampleSize?:number;
+	engine?:Engine;
 }
 
 export interface SolveReq {
 	n:N;
 	mode:Mode;
+	engine?:Engine;
 	strategy:Strategy;
 	history:HistItem[];
 	options?:SolveOptions;

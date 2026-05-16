@@ -1,6 +1,6 @@
 # Bulls Cows API
 
-Cloudflare Workers API for Bulls and Cows , with TypeScript HTTP handling, Rust WASM core logic, and C++20 offline tree precomputation.
+Cloudflare Workers API for Bulls and Cows, with TypeScript HTTP handling, optional Rust WASM dynamic solving, and C++20 offline tree precomputation.
 
 ## Directory
 
@@ -73,9 +73,18 @@ pnpm deploy
 
 ```sh
 curl -s http://localhost:8787/api/meta
+curl -s http://localhost:8787/api/strategies
+curl -s http://localhost:8787/api/errors
 curl -s -X POST http://localhost:8787/api/feedback -H 'content-type: application/json' -d '{"n":4,"secret":"1234","guess":"1324"}'
-curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: application/json' -d '{"n":4,"mode":"dynamic","strategy":"first_remaining","history":[{"guess":"0123","a":1,"b":1}]}'
+curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: application/json' -d '{"n":4,"mode":"dynamic","strategy":"expected_size","history":[{"guess":"0123","a":1,"b":1}]}'
+curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: application/json' -d '{"n":4,"mode":"dynamic","engine":"wasm","strategy":"minimax_worst_bucket","history":[{"guess":"0123","a":1,"b":1}],"options":{"allowFallback":true,"exactThreshold":3000}}'
 curl -s -X POST http://localhost:8787/api/human/start -H 'content-type: application/json' -d '{"n":4}'
+```
+
+Public deployment:
+
+```text
+https://bulls-cows-api.lzray.cloud
 ```
 
 ## Modes
@@ -84,7 +93,97 @@ curl -s -X POST http://localhost:8787/api/human/start -H 'content-type: applicat
 
 `dynamic` mode accepts arbitrary valid history, filters the current candidate set, then chooses the next guess. Exact minimax runs only when `remaining<=exactThreshold`; otherwise the API returns `NEED_TREE_OR_APPROX` or falls back if requested.
 
+## Dynamic Engines
+
+Dynamic solving supports two execution engines:
+
+```text
+js      Default TypeScript path. Stable compatibility path.
+wasm    Rust packed hot path. Same strategy semantics, faster for scoring-heavy dynamic calls.
+```
+
+Use `engine:"wasm"` on `/api/solve/next` or WebSocket `/ws/solve` `next` payloads. `engine` may also be placed in `options.engine`; top-level `engine` wins.
+
+PVP dynamic computer solving accepts `computerEngine:"js"|"wasm"` or `engine` on start and turn payloads. The selected engine is stored in the encrypted session token and can be overridden later because it does not change the strategy.
+
+Tree mode ignores engine because it reads the precomputed binary tree.
+
+Example dynamic WASM response includes the selected engine in both the top-level data and diagnostics:
+
+```json
+{
+	"ok":true,
+	"data":{
+		"n":4,
+		"mode":"dynamic",
+		"engine":"wasm",
+		"strategy":"expected_size",
+		"nextGuess":"0145",
+		"nextGuessIndex":16,
+		"remaining":720,
+		"solved":false,
+		"diagnostics":{"usedFallback":false,"maxBucket":148,"candidateCount":5040,"engine":"wasm"}
+	}
+}
+```
+
+For n=5 and n=6, exact dynamic scoring can still be expensive. Prefer tree mode for long games or set `allowFallback:true` with a conservative `exactThreshold`.
+
+## Strategies
+
 The bundled `optimal` strategy is a tree-only 4-digit asset converted into the project `BCST` format.
+
+Additional dynamic and tree-generator strategies:
+
+- `expected_size`: Irving 1978 average-case metric; minimizes expected remaining candidate count.
+- `feedback_count`: Kooi 2005 partition-count metric; maximizes the number of possible feedback classes.
+
+## WebSocket
+
+Machine solving:
+
+```js
+const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/solve");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>ws.send(JSON.stringify({
+	id:"next-1",
+	type:"next",
+	payload:{
+		n:4,
+		mode:"dynamic",
+		engine:"wasm",
+		strategy:"expected_size",
+		history:[{guess:"0123",a:1,b:1}],
+		options:{allowFallback:true,exactThreshold:3000}
+	}
+}));
+```
+
+PVP:
+
+```js
+const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/pvp");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>ws.send(JSON.stringify({
+	id:"start",
+	type:"start",
+	payload:{n:4,humanSecret:"1234",computerStrategy:"minimax_worst_bucket",computerMode:"dynamic",computerEngine:"wasm"}
+}));
+```
+
+For an existing PVP session, a later turn can override only the engine:
+
+```js
+ws.send(JSON.stringify({
+	id:"turn-2",
+	type:"turn",
+	payload:{
+		engine:"wasm",
+		humanGuess:"5678",
+		computerFeedback:{a:0,b:3}
+	}
+}));
+```
 
 ## Tests
 

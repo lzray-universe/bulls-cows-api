@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Bulls Cows API</title>
+	<style>
+		:root{
+			color-scheme:light;
+			--bg:#f7f8fa;
+			--fg:#1f2933;
+			--muted:#5d6978;
+			--line:#d8dde5;
+			--panel:#ffffff;
+			--code:#eef2f7;
+			--accent:#0f766e;
+		}
+		*{box-sizing:border-box}
+		body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.55 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+		header{border-bottom:1px solid var(--line);background:var(--panel)}
+		main,header>div{max-width:1120px;margin:0 auto;padding:24px}
+		h1{margin:0 0 8px;font-size:28px;font-weight:500;letter-spacing:0}
+		h2{margin:30px 0 12px;font-size:20px;font-weight:500;letter-spacing:0}
+		h3{margin:22px 0 8px;font-size:16px;font-weight:500;letter-spacing:0}
+		p{margin:8px 0;color:var(--muted)}
+		a{color:var(--accent);text-decoration:none}
+		a:hover{text-decoration:underline}
+		.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+		.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+		code,pre{font:13px/1.45 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace}
+		pre{overflow:auto;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px;margin:10px 0}
+		table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+		th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top;font-weight:400}
+		th{background:#eef2f7;color:#344054}
+		tr:last-child td{border-bottom:0}
+		.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin:2px;background:#fff;color:#334155}
+		.small{font-size:12px;color:var(--muted)}
+	</style>
+</head>
+<body>
+	<header>
+		<div>
+			<h1>Bulls Cows API</h1>
+			<p>A Cloudflare Workers API for Bulls and Cows, with machine solving, human sessions, PVP play, dynamic strategies, and precomputed decision trees.</p>
+			<p>
+				<a href="/api/meta">/api/meta</a>
+				<span class="badge">3-6 digits</span>
+				<span class="badge">unique digits</span>
+				<span class="badge">HTTP + WebSocket</span>
+				<span class="badge">JS / WASM engine</span>
+			</p>
+		</div>
+	</header>
+	<main>
+		<section>
+			<h2>Capabilities</h2>
+			<div class="grid">
+				<div class="card">
+					<h3>Machine solving</h3>
+					<p>Submit guess + A/B history, and the server filters candidates and returns the next guess. Dynamic mode can start from any valid history; tree mode follows a fixed first guess and a precomputed tree. Dynamic mode supports <code>engine:"js"</code> and <code>engine:"wasm"</code>.</p>
+				</div>
+				<div class="card">
+					<h3>Human sessions</h3>
+					<p>The server generates a random secret and stores it in an AES-GCM encrypted session token. No database is required.</p>
+				</div>
+				<div class="card">
+					<h3>PVP play</h3>
+					<p>The user provides a human secret, both sides take turns guessing, and the server validates feedback for the computer's guesses.</p>
+				</div>
+				<div class="card">
+					<h3>Precomputed assets</h3>
+					<p>Candidate codebooks and decision trees are stored as Workers Static Assets and loaded lazily through the ASSETS binding.</p>
+				</div>
+			</div>
+		</section>
+
+		<section>
+			<h2>Strategies</h2>
+			<table>
+				<thead><tr><th>strategy</th><th>modes</th><th>description</th></tr></thead>
+				<tbody>
+					<tr><td><code>first_remaining</code></td><td>dynamic, tree</td><td>After filtering, choose the lowest indexed remaining candidate.</td></tr>
+					<tr><td><code>minimax_worst_bucket</code></td><td>dynamic, tree</td><td>Minimize the largest feedback bucket for a more stable worst-case path.</td></tr>
+					<tr><td><code>expected_size</code></td><td>dynamic, tree</td><td>Irving, 1978. Minimize expected remaining set size, equivalent to minimizing the sum of squared bucket sizes.</td></tr>
+					<tr><td><code>feedback_count</code></td><td>dynamic, tree</td><td>Kooi, 2005. Maximize the number of non-empty feedback buckets.</td></tr>
+					<tr><td><code>optimal</code></td><td>tree</td><td>The built-in four-digit optimal tree. The fixed first guess is <code>0123</code>.</td></tr>
+				</tbody>
+			</table>
+			<p class="small">Use <a href="/api/strategies">/api/strategies</a> for the full strategy list.</p>
+		</section>
+
+		<section>
+			<h2>Execution Engines</h2>
+			<table>
+				<thead><tr><th>engine</th><th>scope</th><th>description</th></tr></thead>
+				<tbody>
+					<tr><td><code>js</code></td><td>dynamic</td><td>The default TypeScript path. It is kept as the compatibility path and is useful for ordinary calls and comparison tests.</td></tr>
+					<tr><td><code>wasm</code></td><td>dynamic</td><td>The Rust packed hot path. Candidate filtering and strategy scoring run inside WASM, which is useful for heavier strategies such as <code>minimax_worst_bucket</code>, <code>expected_size</code>, and <code>feedback_count</code>.</td></tr>
+				</tbody>
+			</table>
+			<p class="small"><code>tree</code> mode reads a precomputed binary tree and does not use an engine. For machine solving, pass <code>engine:"wasm"</code>. For PVP, pass <code>computerEngine:"wasm"</code> or <code>engine:"wasm"</code>.</p>
+		</section>
+
+		<section>
+			<h2>HTTP Examples</h2>
+			<h3>Feedback</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/feedback \
+	-H "content-type: application/json" \
+	-d '{"n":4,"secret":"1234","guess":"1324"}'</pre>
+			<h3>Dynamic machine solving</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
+	-H "content-type: application/json" \
+	-d '{"n":4,"mode":"dynamic","engine":"wasm","strategy":"expected_size","history":[{"guess":"0123","a":1,"b":1}],"options":{"allowFallback":true,"exactThreshold":3000}}'</pre>
+			<h3>Four-digit optimal tree</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
+	-H "content-type: application/json" \
+	-d '{"n":4,"mode":"tree","strategy":"optimal","history":[{"guess":"0123","a":1,"b":1}]}'</pre>
+			<h3>Human session</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/human/start \
+	-H "content-type: application/json" \
+	-d '{"n":4}'</pre>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/human/guess \
+	-H "content-type: application/json" \
+	-d '{"sessionToken":"...","guess":"1234"}'</pre>
+		</section>
+
+		<section>
+			<h2>WebSocket</h2>
+			<h3>Machine solving /ws/solve</h3>
+			<pre>const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/solve");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>{
+	ws.send(JSON.stringify({
+		id:"m1",
+		type:"next",
+		payload:{
+			n:4,
+			mode:"dynamic",
+			engine:"wasm",
+			strategy:"feedback_count",
+			history:[{guess:"0123",a:1,b:1}],
+			options:{allowFallback:true,exactThreshold:3000}
+		}
+	}));
+};</pre>
+			<h3>PVP /ws/pvp</h3>
+			<pre>const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/pvp");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>{
+	ws.send(JSON.stringify({
+		id:"start",
+		type:"start",
+		payload:{n:4,humanSecret:"1234",computerStrategy:"minimax_worst_bucket",computerMode:"dynamic",computerEngine:"wasm"}
+	}));
+};
+// Later turns can omit sessionToken because the connection keeps the latest token.
+ws.send(JSON.stringify({
+	id:"turn1",
+	type:"turn",
+	payload:{humanGuess:"5678",computerFeedback:{a:1,b:1}}
+}));</pre>
+		</section>
+
+		<section>
+			<h2>Error Codes</h2>
+			<p>All HTTP errors return <code>{"ok":false,"error":{"code":"...","message":"...","details":...}}</code>. WebSocket errors use the same shape.</p>
+			<p>Use <a href="/api/errors">/api/errors</a> for the complete error list.</p>
+			<div class="grid">
+				<div class="card"><code>INVALID_GUESS</code><p>The guess has the wrong length, contains non-digits, or repeats a digit.</p></div>
+				<div class="card"><code>INVALID_FEEDBACK</code><p>The A/B feedback is impossible, such as <code>3A1B</code> for a four-digit game.</p></div>
+				<div class="card"><code>INCONSISTENT_HISTORY</code><p>The history contradicts itself and leaves no possible secret.</p></div>
+				<div class="card"><code>NEED_TREE_OR_APPROX</code><p>The exact dynamic strategy exceeded the threshold. Use a precomputed tree or allow fallback.</p></div>
+			</div>
+		</section>
+	</main>
+</body>
+</html>

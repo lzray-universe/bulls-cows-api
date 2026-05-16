@@ -1,5 +1,5 @@
 import {ApiError} from "./errors";
-import type {Env,HistItem,N,Strategy,Mode} from "./types";
+import type {Engine,Env,HistItem,N,Strategy,Mode} from "./types";
 
 export interface HumanToken {
 	kind:"human";
@@ -17,6 +17,7 @@ export interface PvpToken {
 	humanSecret:string;
 	computerStrategy:Strategy;
 	computerMode:Mode;
+	computerEngine?:Engine;
 	humanAttempts:number;
 	computerAttempts:number;
 	computerHistory:HistItem[];

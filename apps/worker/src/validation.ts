@@ -1,5 +1,5 @@
 import {ApiError} from "./errors";
-import type {Feedback,HistItem,N,Strategy} from "./types";
+import type {Engine,Feedback,HistItem,N,Strategy} from "./types";
 
 export function is_n(v:unknown):v is N {
 	return v===3||v===4||v===5||v===6;
@@ -11,8 +11,18 @@ export function assert_n(v:unknown):N {
 }
 
 export function assert_strategy(v:unknown):Strategy {
-	if (v==="first_remaining"||v==="minimax_worst_bucket"||v==="optimal") return v;
+	if (v==="first_remaining"||
+		v==="minimax_worst_bucket"||
+		v==="expected_size"||
+		v==="feedback_count"||
+		v==="optimal") return v;
 	throw new ApiError("STRATEGY_NOT_FOUND","unknown strategy");
+}
+
+export function assert_engine(v:unknown,def:Engine="js"):Engine {
+	if (v===undefined||v===null) return def;
+	if (v==="js"||v==="wasm") return v;
+	throw new ApiError("BAD_REQUEST","engine must be js or wasm");
 }
 
 export function valid_guess(n:N,s:unknown):s is string {

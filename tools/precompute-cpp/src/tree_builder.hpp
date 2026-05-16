@@ -31,16 +31,40 @@ struct BestGuess{
 	uint32_t idx=0;
 	size_t max_bucket=std::numeric_limits<size_t>::max();
 	unsigned long long sq=std::numeric_limits<unsigned long long>::max();
+	size_t parts=0;
 	bool in_rem=false;
 };
 
-inline bool better_best(const BestGuess&a,const BestGuess&b){
-	if(a.max_bucket!=b.max_bucket)
-		return a.max_bucket<b.max_bucket;
-	if(a.in_rem!=b.in_rem)
-		return a.in_rem&&!b.in_rem;
-	if(a.sq!=b.sq)
-		return a.sq<b.sq;
+inline bool better_best(const BestGuess&a,const BestGuess&b,Strategy st){
+	if(st==Strategy::minimax_worst_bucket){
+		if(a.max_bucket!=b.max_bucket)
+			return a.max_bucket<b.max_bucket;
+		if(a.in_rem!=b.in_rem)
+			return a.in_rem&&!b.in_rem;
+		if(a.sq!=b.sq)
+			return a.sq<b.sq;
+		return a.idx<b.idx;
+	}
+	if(st==Strategy::expected_size){
+		if(a.sq!=b.sq)
+			return a.sq<b.sq;
+		if(a.in_rem!=b.in_rem)
+			return a.in_rem&&!b.in_rem;
+		if(a.max_bucket!=b.max_bucket)
+			return a.max_bucket<b.max_bucket;
+		return a.idx<b.idx;
+	}
+	if(st==Strategy::feedback_count){
+		if(a.parts!=b.parts)
+			return a.parts>b.parts;
+		if(a.in_rem!=b.in_rem)
+			return a.in_rem&&!b.in_rem;
+		if(a.max_bucket!=b.max_bucket)
+			return a.max_bucket<b.max_bucket;
+		if(a.sq!=b.sq)
+			return a.sq<b.sq;
+		return a.idx<b.idx;
+	}
 	return a.idx<b.idx;
 }
 
@@ -96,13 +120,16 @@ inline uint32_t choose_guess(int n,Strategy st,const std::vector<Candidate>&all,
 			}
 			size_t maxb=0;
 			unsigned long long sq=0;
+			size_t parts=0;
 			for(size_t x : buckets){
 				maxb=std::max(maxb,x);
+				if(x)
+					parts++;
 				sq+=static_cast<unsigned long long>(x)*
 					static_cast<unsigned long long>(x);
 			}
-			BestGuess cur{gi,maxb,sq,bool(in_rem[gi])};
-			if(better_best(cur,best))
+			BestGuess cur{gi,maxb,sq,parts,bool(in_rem[gi])};
+			if(better_best(cur,best,st))
 				best=cur;
 		}
 		bests[tid]=best;
@@ -114,7 +141,7 @@ inline uint32_t choose_guess(int n,Strategy st,const std::vector<Candidate>&all,
 		t.join();
 	BestGuess best;
 	for(auto&b : bests)
-		if(better_best(b,best))
+		if(better_best(b,best,st))
 			best=b;
 	out_max_bucket=best.max_bucket;
 	return best.idx;

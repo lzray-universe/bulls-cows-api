@@ -130,6 +130,108 @@ When the answer is uniquely determined:
 }
 ```
 
+## POST /api/solve/run-tree
+
+Runs a complete computer simulation against a provided secret using a precomputed tree. This is useful for checking the exact table path for a given answer.
+
+Request:
+
+```json
+{
+	"n":4,
+	"secret":"1234",
+	"strategy":"optimal",
+	"history":[],
+	"maxSteps":32
+}
+```
+
+Fields:
+
+```text
+n          3, 4, 5, or 6.
+secret     The secret to solve. It must be a valid unique-digit number.
+strategy   Tree strategy. The tree asset must exist.
+history    Optional completed guesses. If present, it must follow the tree path.
+maxSteps   Optional safety limit from 1 to 128. Default 32.
+```
+
+The endpoint computes feedback from `secret`, follows the tree, and returns every computed step. Supplied history is verified against the secret before the run continues.
+
+Response data:
+
+```json
+{
+	"n":4,
+	"mode":"tree",
+	"strategy":"optimal",
+	"secret":"1234",
+	"givenSteps":[],
+	"steps":[
+		{"turn":1,"source":"computed","guess":"0123","guessIndex":123,"a":0,"b":3,"text":"0A3B","remaining":5040,"solved":false}
+	],
+	"allSteps":[
+		{"turn":1,"source":"computed","guess":"0123","guessIndex":123,"a":0,"b":3,"text":"0A3B","remaining":5040,"solved":false}
+	],
+	"attempts":1,
+	"solved":false
+}
+```
+
+## POST /api/solve/run-dynamic
+
+Runs a complete computer simulation against a provided secret using dynamic solving. This endpoint can continue from already completed guesses.
+
+Request:
+
+```json
+{
+	"n":4,
+	"secret":"1234",
+	"strategy":"expected_size",
+	"engine":"wasm",
+	"history":[{"guess":"0123","a":0,"b":3}],
+	"options":{"allowFallback":true,"exactThreshold":3000},
+	"maxSteps":32
+}
+```
+
+Fields:
+
+```text
+n          3, 4, 5, or 6.
+secret     The secret to solve. It must be a valid unique-digit number.
+strategy   Dynamic strategy. optimal is not allowed because it is tree-only.
+engine     Optional: js or wasm. Default js.
+history    Optional completed guesses. Feedback is checked against secret.
+options    Dynamic solver options, same as /api/solve/next.
+maxSteps   Optional safety limit from 1 to 128. Default 32.
+```
+
+Response data:
+
+```json
+{
+	"n":4,
+	"mode":"dynamic",
+	"engine":"wasm",
+	"strategy":"expected_size",
+	"secret":"1234",
+	"givenSteps":[{"turn":1,"source":"history","guess":"0123","a":0,"b":3,"text":"0A3B","solved":false}],
+	"steps":[
+		{"turn":2,"source":"computed","guess":"1435","guessIndex":602,"a":2,"b":1,"text":"2A1B","remaining":120,"solved":false}
+	],
+	"allSteps":[
+		{"turn":1,"source":"history","guess":"0123","a":0,"b":3,"text":"0A3B","solved":false},
+		{"turn":2,"source":"computed","guess":"1435","guessIndex":602,"a":2,"b":1,"text":"2A1B","remaining":120,"solved":false}
+	],
+	"attempts":2,
+	"solved":false
+}
+```
+
+If the safety limit is reached before a hit, `solved` is `false` and `answer` is omitted.
+
 ## POST /api/human/start
 
 Creates a stateless encrypted session token containing the server secret.

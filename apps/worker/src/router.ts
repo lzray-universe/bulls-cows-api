@@ -3,7 +3,7 @@ import {ApiError} from "./errors";
 import {cors_headers,fail} from "./json";
 import {meta_route,strategies_route} from "./api/meta";
 import {feedback_route} from "./api/feedback";
-import {solve_next_route} from "./api/solve";
+import {solve_next_route,solve_run_dynamic_route,solve_run_tree_route} from "./api/solve";
 import {human_guess_route,human_start_route} from "./api/human";
 import {pvp_start_route,pvp_turn_route} from "./api/pvp";
 import {errors_route} from "./api/errorsInfo";
@@ -17,6 +17,8 @@ const routes:Record<string,Handler>={
 	"GET /api/errors":errors_route,
 	"POST /api/feedback":feedback_route,
 	"POST /api/solve/next":solve_next_route,
+	"POST /api/solve/run-tree":solve_run_tree_route,
+	"POST /api/solve/run-dynamic":solve_run_dynamic_route,
 	"POST /api/human/start":human_start_route,
 	"POST /api/human/guess":human_guess_route,
 	"POST /api/pvp/start":pvp_start_route,

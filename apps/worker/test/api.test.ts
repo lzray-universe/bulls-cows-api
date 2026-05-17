@@ -84,6 +84,49 @@ describe("api",()=>{
 		}
 	});
 
+	it("run dynamic until solved",async()=>{
+		const res=await route(req("/api/solve/run-dynamic",{
+			n:3,
+			secret:"012",
+			strategy:"first_remaining",
+			engine:"js"
+		}),env);
+		const json=await res.json() as any;
+		expect(json.ok).toBe(true);
+		expect(json.data.solved).toBe(true);
+		expect(json.data.answer).toBe("012");
+		expect(json.data.steps).toHaveLength(1);
+		expect(json.data.steps[0]).toMatchObject({guess:"012",a:3,b:0,solved:true});
+	});
+
+	it("run dynamic continues from history",async()=>{
+		const res=await route(req("/api/solve/run-dynamic",{
+			n:3,
+			secret:"013",
+			strategy:"first_remaining",
+			history:[{guess:"012",a:2,b:0}],
+			maxSteps:8
+		}),env);
+		const json=await res.json() as any;
+		expect(json.ok).toBe(true);
+		expect(json.data.givenSteps).toHaveLength(1);
+		expect(json.data.solved).toBe(true);
+		expect(json.data.answer).toBe("013");
+		expect(json.data.allSteps.at(-1)).toMatchObject({guess:"013",a:3,b:0,solved:true});
+	});
+
+	it("run dynamic rejects false completed feedback",async()=>{
+		const res=await route(req("/api/solve/run-dynamic",{
+			n:3,
+			secret:"013",
+			strategy:"first_remaining",
+			history:[{guess:"012",a:0,b:0}]
+		}),env);
+		const json=await res.json() as any;
+		expect(json.ok).toBe(false);
+		expect(json.error.code).toBe("INVALID_FEEDBACK");
+	});
+
 	it("bad input",async()=>{
 		const res=await route(req("/api/feedback",{n:4,secret:"1123",guess:"1324"}),env);
 		const json=await res.json() as any;

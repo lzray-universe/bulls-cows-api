@@ -58,7 +58,7 @@
 			<div class="grid">
 				<div class="card">
 					<h3>Machine solving</h3>
-					<p>Submit guess + A/B history, and the server filters candidates and returns the next guess. Dynamic mode can start from any valid history; tree mode follows a fixed first guess and a precomputed tree. Dynamic mode supports <code>engine:"js"</code> and <code>engine:"wasm"</code>.</p>
+					<p>Submit guess + A/B history, and the server filters candidates and returns the next guess. Dynamic mode can start from any valid history; tree mode follows a fixed first guess and a precomputed tree. Dynamic mode supports <code>engine:"js"</code> and <code>engine:"wasm"</code>. Run endpoints can simulate a full solve against a provided secret.</p>
 				</div>
 				<div class="card">
 					<h3>Human sessions</h3>
@@ -116,6 +116,14 @@
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
 	-H "content-type: application/json" \
 	-d '{"n":4,"mode":"tree","strategy":"optimal","history":[{"guess":"0123","a":1,"b":1}]}'</pre>
+			<h3>Run a tree simulation</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/run-tree \
+	-H "content-type: application/json" \
+	-d '{"n":4,"secret":"1234","strategy":"optimal"}'</pre>
+			<h3>Run a dynamic simulation from completed guesses</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/run-dynamic \
+	-H "content-type: application/json" \
+	-d '{"n":4,"secret":"1234","strategy":"expected_size","engine":"wasm","history":[{"guess":"0123","a":0,"b":3}],"options":{"allowFallback":true,"exactThreshold":3000}}'</pre>
 			<h3>Human session</h3>
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/human/start \
 	-H "content-type: application/json" \

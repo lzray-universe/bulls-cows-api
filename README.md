@@ -78,6 +78,8 @@ curl -s http://localhost:8787/api/errors
 curl -s -X POST http://localhost:8787/api/feedback -H 'content-type: application/json' -d '{"n":4,"secret":"1234","guess":"1324"}'
 curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: application/json' -d '{"n":4,"mode":"dynamic","strategy":"expected_size","history":[{"guess":"0123","a":1,"b":1}]}'
 curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: application/json' -d '{"n":4,"mode":"dynamic","engine":"wasm","strategy":"minimax_worst_bucket","history":[{"guess":"0123","a":1,"b":1}],"options":{"allowFallback":true,"exactThreshold":3000}}'
+curl -s -X POST http://localhost:8787/api/solve/run-tree -H 'content-type: application/json' -d '{"n":4,"secret":"1234","strategy":"optimal"}'
+curl -s -X POST http://localhost:8787/api/solve/run-dynamic -H 'content-type: application/json' -d '{"n":4,"secret":"1234","strategy":"expected_size","engine":"wasm","history":[{"guess":"0123","a":0,"b":3}],"options":{"allowFallback":true,"exactThreshold":3000}}'
 curl -s -X POST http://localhost:8787/api/human/start -H 'content-type: application/json' -d '{"n":4}'
 ```
 
@@ -92,6 +94,10 @@ https://bulls-cows-api.lzray.cloud
 `tree` mode follows an offline-generated decision tree from the fixed first guess: `012`, `0123`, `01234`, or `012345`. Strategy is fixed for the whole path.
 
 `dynamic` mode accepts arbitrary valid history, filters the current candidate set, then chooses the next guess. Exact minimax runs only when `remaining<=exactThreshold`; otherwise the API returns `NEED_TREE_OR_APPROX` or falls back if requested.
+
+`/api/solve/run-tree` runs a complete computer simulation against a provided secret using a precomputed tree. It starts from the fixed first guess unless a valid tree-following history is provided.
+
+`/api/solve/run-dynamic` runs a complete computer simulation against a provided secret using dynamic solving. It can continue from already completed guesses by passing `history`; every supplied feedback item is checked against the secret before the simulation continues.
 
 ## Dynamic Engines
 

@@ -9,6 +9,7 @@ bulls-cows-api/
 	apps/worker/              TypeScript Worker API
 	crates/core/              pure Rust candidate, feedback, filtering, dynamic solver
 	crates/worker_wasm/       wasm-bindgen wrapper
+	tests/                    deployable API black-box tests
 	tools/precompute-cpp/     deterministic C++20 asset generator
 	tools/asset-inspect/      manifest/tree inspection helper
 	spec/                     API and binary format specs
@@ -198,4 +199,13 @@ pnpm -C apps/worker test
 cargo test --manifest-path crates/core/Cargo.toml
 cmake --build build/precompute --config Release
 ctest --test-dir build/precompute
+```
+
+Run the full HTTP, asset, session, solver, error-path, and WebSocket black-box suite against any deployed or local base URL:
+
+```sh
+pnpm test:api -- https://bulls-cows-api.lzray.cloud
+BASE_URL=http://localhost:8787 pnpm test:api
+$env:BASE_URL="http://localhost:8787"; pnpm test:api
+pnpm test:api -- --base https://bulls-cows-api.lzray.cloud --json
 ```

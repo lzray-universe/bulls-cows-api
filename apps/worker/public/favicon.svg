@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Bulls Cows API">
+	<defs>
+		<linearGradient id="bg" x1="28" y1="12" x2="228" y2="244" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#04172f"/>
+			<stop offset=".55" stop-color="#061326"/>
+			<stop offset="1" stop-color="#020a18"/>
+		</linearGradient>
+		<linearGradient id="tileDark" x1="42" y1="40" x2="116" y2="116" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#516178"/>
+			<stop offset="1" stop-color="#263449"/>
+		</linearGradient>
+		<linearGradient id="tileGreen" x1="140" y1="40" x2="214" y2="116" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#55d14d"/>
+			<stop offset="1" stop-color="#26a334"/>
+		</linearGradient>
+		<linearGradient id="tileOrange" x1="42" y1="138" x2="116" y2="214" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#ff9e14"/>
+			<stop offset="1" stop-color="#f47a00"/>
+		</linearGradient>
+		<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+			<feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".28"/>
+		</filter>
+	</defs>
+	<rect width="256" height="256" rx="54" fill="url(#bg)"/>
+	<g filter="url(#shadow)">
+		<rect x="42" y="40" width="76" height="76" rx="16" fill="url(#tileDark)"/>
+		<rect x="138" y="40" width="76" height="76" rx="16" fill="url(#tileGreen)"/>
+		<rect x="42" y="136" width="76" height="76" rx="16" fill="url(#tileOrange)"/>
+		<rect x="138" y="136" width="76" height="76" rx="16" fill="url(#tileDark)"/>
+	</g>
+	<g fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-weight="800" text-anchor="middle">
+		<text x="80" y="96" font-size="58">7</text>
+		<text x="176" y="96" font-size="58">3</text>
+		<text x="80" y="192" font-size="58">8</text>
+		<text x="176" y="192" font-size="58">5</text>
+	</g>
+	<g fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".96">
+		<path d="M98 148c12 2 22 13 22 27"/>
+		<path d="M120 175l-12-12"/>
+		<path d="M120 175l12-12"/>
+		<path d="M62 198c-12-2-22-13-22-27"/>
+		<path d="M40 171l12 12"/>
+		<path d="M40 171l-12 12"/>
+	</g>
+	<rect x="58" y="220" width="140" height="24" rx="12" fill="none" stroke="#fff" stroke-width="5"/>
+	<g font-family="Inter,Segoe UI,Arial,sans-serif" font-weight="800" font-size="22" text-anchor="middle">
+		<text x="91" y="239" fill="#39c44a">1</text>
+		<text x="116" y="239" fill="#fff">A</text>
+		<text x="143" y="239" fill="#ff8a00">2</text>
+		<text x="169" y="239" fill="#fff">B</text>
+	</g>
+</svg>

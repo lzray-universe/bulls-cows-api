@@ -81,7 +81,7 @@ curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: applicati
 curl -s -X POST http://localhost:8787/api/human/start -H 'content-type: application/json' -d '{"n":4}'
 ```
 
-Public deployment:
+Use the hosted API and documentation site at:
 
 ```text
 https://bulls-cows-api.lzray.cloud

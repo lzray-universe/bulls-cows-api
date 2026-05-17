@@ -84,7 +84,7 @@
 					<tr><td><code>minimax_worst_bucket</code></td><td>dynamic, tree</td><td>Minimize the largest feedback bucket for a more stable worst-case path.</td></tr>
 					<tr><td><code>expected_size</code></td><td>dynamic, tree</td><td>Irving, 1978. Minimize expected remaining set size, equivalent to minimizing the sum of squared bucket sizes.</td></tr>
 					<tr><td><code>feedback_count</code></td><td>dynamic, tree</td><td>Kooi, 2005. Maximize the number of non-empty feedback buckets.</td></tr>
-					<tr><td><code>optimal</code></td><td>tree</td><td>The built-in four-digit optimal tree. The fixed first guess is <code>0123</code>.</td></tr>
+					<tr><td><code>optimal</code></td><td>tree</td><td>Built-in optimal trees for three and four digits. The fixed first guesses are <code>012</code> and <code>0123</code>.</td></tr>
 				</tbody>
 			</table>
 			<p class="small">Use <a href="/api/strategies">/api/strategies</a> for the full strategy list.</p>
@@ -112,10 +112,13 @@
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
 	-H "content-type: application/json" \
 	-d '{"n":4,"mode":"dynamic","engine":"wasm","strategy":"expected_size","history":[{"guess":"0123","a":1,"b":1}],"options":{"allowFallback":true,"exactThreshold":3000}}'</pre>
-			<h3>Four-digit optimal tree</h3>
+			<h3>Optimal tree</h3>
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
 	-H "content-type: application/json" \
 	-d '{"n":4,"mode":"tree","strategy":"optimal","history":[{"guess":"0123","a":1,"b":1}]}'</pre>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/next \
+	-H "content-type: application/json" \
+	-d '{"n":3,"mode":"tree","strategy":"optimal","history":[{"guess":"012","a":0,"b":0}]}'</pre>
 			<h3>Run a tree simulation</h3>
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/solve/run-tree \
 	-H "content-type: application/json" \

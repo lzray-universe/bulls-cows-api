@@ -78,8 +78,16 @@ async function run_all(){
 		assert(r.status===200,`status ${r.status}`);
 		const m=as_obj(j);
 		assert(m.version===1,"manifest version");
+		assert(Boolean(as_obj(m.trees)["n3:optimal"]),"missing n3 optimal tree");
 		assert(Boolean(as_obj(m.trees)["n4:optimal"]),"missing n4 optimal tree");
 		return {trees:Object.keys(as_obj(m.trees)).length};
+	});
+	await run("n3 tree asset header",async()=>{
+		const {r,buf,ct}=await req("/assets/bc/v1/n3/tree.optimal.part000.bin",{binary:true});
+		assert(r.status===200,`status ${r.status}`);
+		assert(buf&&buf.length>4,"empty tree");
+		assert(buf![0]===0x42&&buf![1]===0x43&&buf![2]===0x53&&buf![3]===0x54,"bad BCST magic");
+		return {bytes:buf!.length,contentType:ct};
 	});
 	await run("n4 tree asset header",async()=>{
 		const {r,buf,ct}=await req("/assets/bc/v1/n4/tree.optimal.part000.bin",{binary:true});
@@ -103,8 +111,9 @@ async function run_all(){
 		const d=data_obj(j);
 		assert(arr(d.engines).includes("wasm"),"missing wasm engine");
 		assert(as_obj(as_obj(d.assetManifest).ns).n6&&as_obj(as_obj(as_obj(d.assetManifest).ns).n6).candidateCount===151200,"bad n6 candidate count");
+		assert(as_obj(as_obj(as_obj(d.assetManifest).trees)["n3:optimal"]).nodeCount===1005,"bad n3 optimal node count");
 		assert(as_obj(as_obj(as_obj(d.assetManifest).trees)["n4:optimal"]).nodeCount===6569,"bad n4 optimal node count");
-		return {version:d.version,engines:arr(d.engines).join(","),n4Nodes:6569};
+		return {version:d.version,engines:arr(d.engines).join(","),n3Nodes:1005,n4Nodes:6569};
 	});
 	await run("strategies",async()=>{
 		const {r,j}=await req("/api/strategies");
@@ -168,6 +177,13 @@ async function run_all(){
 		assert(d.nextGuess==="1435",`next ${d.nextGuess}`);
 		return {next:d.nextGuess,remaining:d.remaining};
 	});
+	await run("solve tree optimal n3",async()=>{
+		const {r,j}=await post("/api/solve/next",{n:3,mode:"tree",strategy:"optimal",history:[{guess:"012",a:0,b:0}]});
+		assert(r.status===200,`status ${r.status}`);
+		const d=data_obj(j);
+		assert(d.nextGuess==="345",`next ${d.nextGuess}`);
+		return {next:d.nextGuess,remaining:d.remaining};
+	});
 	await run("solve tree missing strategy asset",async()=>{
 		const {r,j}=await post("/api/solve/next",{n:4,mode:"tree",strategy:"first_remaining",history:[{guess:"0123",a:1,b:1}]});
 		return expect_err(r,j,404,"TREE_NOT_FOUND");
@@ -220,6 +236,15 @@ async function run_all(){
 		const path=arr(d.steps).map(s=>String(as_obj(s).guess)).join(",");
 		assert(d.solved===true,"not solved");
 		assert(path==="0123,1435,1234",`path ${path}`);
+		return {attempts:d.attempts,path};
+	});
+	await run("run tree optimal n3",async()=>{
+		const {r,j}=await post("/api/solve/run-tree",{n:3,secret:"345",strategy:"optimal",maxSteps:16});
+		assert(r.status===200,`status ${r.status}`);
+		const d=data_obj(j);
+		const path=arr(d.steps).map(s=>String(as_obj(s).guess)).join(",");
+		assert(d.solved===true,"not solved");
+		assert(path==="012,345",`path ${path}`);
 		return {attempts:d.attempts,path};
 	});
 	await run("run dynamic wasm with seed history",async()=>{

@@ -5,7 +5,7 @@ export const strategies:Record<Strategy,{id:number;dynamic:boolean;tree:boolean;
 	minimax_worst_bucket:{id:2,dynamic:true,tree:true,desc:"minimize largest feedback bucket with deterministic tie-breaks"},
 	expected_size:{id:3,dynamic:true,tree:true,desc:"Irving 1978: minimize expected remaining set size"},
 	feedback_count:{id:4,dynamic:true,tree:true,desc:"Kooi 2005: maximize the number of possible feedback partitions"},
-	optimal:{id:100,dynamic:false,tree:true,desc:"precomputed optimal 4-digit decision tree"}
+	optimal:{id:100,dynamic:false,tree:true,desc:"precomputed optimal 3-digit and 4-digit decision trees"}
 };
 
 export function list_strategies() {

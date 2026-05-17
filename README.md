@@ -138,7 +138,7 @@ For n=5 and n=6, exact dynamic scoring can still be expensive. Prefer tree mode 
 
 ## Strategies
 
-The bundled `optimal` strategy is a tree-only 4-digit asset converted into the project `BCST` format.
+The bundled `optimal` strategy is backed by tree-only 3-digit and 4-digit assets converted into the project `BCST` format.
 
 Additional dynamic and tree-generator strategies:
 

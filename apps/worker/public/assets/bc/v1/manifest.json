@@ -42,6 +42,15 @@
 				"assets/bc/v1/n3/tree.first_remaining.part000.bin"
 			]
 		},
+		"n3:optimal": {
+			"n": 3,
+			"strategy": "optimal",
+			"nodeCount": 1005,
+			"hash": "a3907df9d6f8edd4",
+			"parts": [
+				"assets/bc/v1/n3/tree.optimal.part000.bin"
+			]
+		},
 		"n4:optimal": {
 			"n": 4,
 			"strategy": "optimal",

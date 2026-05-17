@@ -83,4 +83,11 @@ Tie-break order:
 
 ## optimal
 
-`optimal` is a tree-only strategy backed by a precomputed 4-digit decision tree in `assets/bc/v1/n4/tree.optimal.part000.bin`. It is not available in dynamic mode.
+`optimal` is a tree-only strategy backed by precomputed 3-digit and 4-digit decision trees in:
+
+```text
+assets/bc/v1/n3/tree.optimal.part000.bin
+assets/bc/v1/n4/tree.optimal.part000.bin
+```
+
+It is not available in dynamic mode.

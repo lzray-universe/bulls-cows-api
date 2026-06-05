@@ -2,6 +2,8 @@
 
 Cloudflare Workers API for Bulls and Cows, with TypeScript HTTP handling, optional Rust WASM dynamic solving, and C++20 offline tree precomputation.
 
+A live demo is available via my deployed API at https://bulls-cows-api.lzray.cloud/.
+
 ## Directory
 
 ```text

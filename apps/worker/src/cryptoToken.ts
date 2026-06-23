@@ -25,7 +25,22 @@ export interface PvpToken {
 	createdAt:number;
 }
 
-export type SessionToken=HumanToken|PvpToken;
+export interface DuelToken {
+	kind:"duel";
+	n:N;
+	playerASecret:string;
+	playerBSecret:string;
+	playerAName?:string;
+	playerBName?:string;
+	playerAAttempts:number;
+	playerBAttempts:number;
+	playerASolved:boolean;
+	playerBSolved:boolean;
+	createdAt:number;
+	history:{player:"playerA"|"playerB";guess:string;a:number;b:number;round:number}[];
+}
+
+export type SessionToken=HumanToken|PvpToken|DuelToken;
 
 const enc=new TextEncoder();
 const dec=new TextDecoder();

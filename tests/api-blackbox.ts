@@ -313,6 +313,30 @@ async function run_all(){
 		assert(d.humanAttempts===1&&d.computerAttempts===2,"bad attempts");
 		return {humanFeedback:as_obj(d.humanFeedback).text,next:d.nextComputerGuess,winner:d.winner};
 	});
+	let duelTok="";
+	await run("duel start",async()=>{
+		const {r,j}=await post("/api/duel/start",{n:3,playerASecret:"012",playerBSecret:"345",playerAName:"Ada",playerBName:"Ben"});
+		assert(r.status===200,`status ${r.status}`);
+		const d=data_obj(j);
+		assert(typeof d.sessionToken==="string"&&d.sessionToken.length>50,"bad token");
+		assert(d.playerAAttempts===0&&d.playerBAttempts===0,"bad attempts");
+		duelTok=String(d.sessionToken);
+		return {round:d.round,winner:d.winner};
+	});
+	await run("duel turn tie",async()=>{
+		const {r,j}=await post("/api/duel/turn",{sessionToken:duelTok,playerAGuess:"345",playerBGuess:"012"});
+		assert(r.status===200,`status ${r.status}`);
+		const d=data_obj(j);
+		assert(as_obj(d.playerAFeedback).text==="3A0B","bad A feedback");
+		assert(as_obj(d.playerBFeedback).text==="3A0B","bad B feedback");
+		assert(d.winner==="tie"&&d.finished===true,"bad winner");
+		duelTok=String(d.sessionToken);
+		return {winner:d.winner,round:d.round};
+	});
+	await run("duel solved player cannot guess again",async()=>{
+		const {r,j}=await post("/api/duel/turn",{sessionToken:duelTok,playerAGuess:"346"});
+		return expect_err(r,j,400,"BAD_REQUEST");
+	});
 	await run("bad duplicate guess",async()=>{
 		const {r,j}=await post("/api/feedback",{n:4,secret:"1123",guess:"1324"});
 		return expect_err(r,j,400,"INVALID_GUESS");
@@ -329,6 +353,7 @@ async function run_all(){
 		await run("websocket solve",ws_solve);
 		await run("websocket solve bad input",ws_solve_bad);
 		await run("websocket pvp",ws_pvp);
+		await run("websocket duel",ws_duel);
 	}
 }
 
@@ -470,6 +495,26 @@ async function ws_pvp(){
 		const d=as_obj(as_obj(m1).data);
 		assert(d.computerSolved===true,"computer not solved");
 		return {first,next:d.nextComputerGuess||null,winner:d.winner};
+	}finally{
+		ws.close();
+	}
+}
+
+async function ws_duel(){
+	const ws=await MiniWs.connect(ws_url("/ws/duel"),cfg.timeoutMs);
+	try{
+		const p0=ws.wait("d0");
+		ws.send_json({id:"d0",type:"start",payload:{n:3,playerASecret:"012",playerBSecret:"345",playerAName:"Ada",playerBName:"Ben"}});
+		const m0=await timeout(p0,cfg.timeoutMs,"ws duel start timeout");
+		assert(as_obj(m0).ok===true,`ws duel start not ok ${JSON.stringify(m0)}`);
+		const p1=ws.wait("d1");
+		ws.send_json({id:"d1",type:"turn",payload:{playerAGuess:"345",playerBGuess:"012"}});
+		const m1=await timeout(p1,cfg.timeoutMs,"ws duel turn timeout");
+		assert(as_obj(m1).ok===true,`ws duel turn not ok ${JSON.stringify(m1)}`);
+		const d=as_obj(as_obj(m1).data);
+		assert(d.playerASolved===true&&d.playerBSolved===true,"duel not solved");
+		assert(d.winner==="tie",`winner ${d.winner}`);
+		return {winner:d.winner,round:d.round};
 	}finally{
 		ws.close();
 	}

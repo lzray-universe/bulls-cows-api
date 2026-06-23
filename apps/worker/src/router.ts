@@ -6,6 +6,7 @@ import {feedback_route} from "./api/feedback";
 import {solve_next_route,solve_run_dynamic_route,solve_run_tree_route} from "./api/solve";
 import {human_guess_route,human_start_route} from "./api/human";
 import {pvp_start_route,pvp_turn_route} from "./api/pvp";
+import {duel_start_route,duel_turn_route} from "./api/duel";
 import {errors_route} from "./api/errorsInfo";
 import {websocket_route} from "./ws";
 
@@ -22,7 +23,9 @@ const routes:Record<string,Handler>={
 	"POST /api/human/start":human_start_route,
 	"POST /api/human/guess":human_guess_route,
 	"POST /api/pvp/start":pvp_start_route,
-	"POST /api/pvp/turn":pvp_turn_route
+	"POST /api/pvp/turn":pvp_turn_route,
+	"POST /api/duel/start":duel_start_route,
+	"POST /api/duel/turn":duel_turn_route
 };
 
 export async function route(req:Request,env:Env):Promise<Response> {

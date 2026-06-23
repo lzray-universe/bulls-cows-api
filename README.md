@@ -84,6 +84,7 @@ curl -s -X POST http://localhost:8787/api/solve/next -H 'content-type: applicati
 curl -s -X POST http://localhost:8787/api/solve/run-tree -H 'content-type: application/json' -d '{"n":4,"secret":"1234","strategy":"optimal"}'
 curl -s -X POST http://localhost:8787/api/solve/run-dynamic -H 'content-type: application/json' -d '{"n":4,"secret":"1234","strategy":"expected_size","engine":"wasm","history":[{"guess":"0123","a":0,"b":3}],"options":{"allowFallback":true,"exactThreshold":3000}}'
 curl -s -X POST http://localhost:8787/api/human/start -H 'content-type: application/json' -d '{"n":4}'
+curl -s -X POST http://localhost:8787/api/duel/start -H 'content-type: application/json' -d '{"n":3,"playerASecret":"012","playerBSecret":"345"}'
 ```
 
 Use the hosted API and documentation site at:
@@ -114,6 +115,8 @@ wasm    Rust packed hot path. Same strategy semantics, faster for scoring-heavy 
 Use `engine:"wasm"` on `/api/solve/next` or WebSocket `/ws/solve` `next` payloads. `engine` may also be placed in `options.engine`; top-level `engine` wins.
 
 PVP dynamic computer solving accepts `computerEngine:"js"|"wasm"` or `engine` on start and turn payloads. The selected engine is stored in the encrypted session token and can be overridden later because it does not change the strategy.
+
+Two-player duel mode uses `/api/duel/start` and `/api/duel/turn`. Player A guesses Player B's secret, Player B guesses Player A's secret, and the server compares the number of guesses. Both secrets are stored only inside the encrypted stateless token.
 
 Tree mode ignores engine because it reads the precomputed binary tree.
 
@@ -191,6 +194,24 @@ ws.send(JSON.stringify({
 		humanGuess:"5678",
 		computerFeedback:{a:0,b:3}
 	}
+}));
+```
+
+Two-player duel:
+
+```js
+const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/duel");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>ws.send(JSON.stringify({
+	id:"duel-start",
+	type:"start",
+	payload:{n:3,playerASecret:"012",playerBSecret:"345",playerAName:"Ada",playerBName:"Ben"}
+}));
+
+ws.send(JSON.stringify({
+	id:"duel-turn-1",
+	type:"turn",
+	payload:{playerAGuess:"345",playerBGuess:"012"}
 }));
 ```
 

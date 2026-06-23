@@ -162,4 +162,49 @@ describe("api",()=>{
 		expect(tj.ok).toBe(true);
 		expect(tj.data.computerSolved).toBe(true);
 	});
+
+	it("duel basic flow",async()=>{
+		const start=await route(req("/api/duel/start",{
+			n:3,
+			playerASecret:"012",
+			playerBSecret:"345",
+			playerAName:"Ada",
+			playerBName:"Ben"
+		}),env);
+		const sj=await start.json() as any;
+		expect(sj.ok).toBe(true);
+		expect(sj.data.playerAAttempts).toBe(0);
+		const turn=await route(req("/api/duel/turn",{
+			sessionToken:sj.data.sessionToken,
+			playerAGuess:"345",
+			playerBGuess:"012"
+		}),env);
+		const tj=await turn.json() as any;
+		expect(tj.ok).toBe(true);
+		expect(tj.data.playerAFeedback).toMatchObject({a:3,b:0,text:"3A0B",solved:true});
+		expect(tj.data.playerBFeedback).toMatchObject({a:3,b:0,text:"3A0B",solved:true});
+		expect(tj.data.winner).toBe("tie");
+		expect(tj.data.finished).toBe(true);
+	});
+
+	it("duel rejects guessing after solved",async()=>{
+		const start=await route(req("/api/duel/start",{
+			n:3,
+			playerASecret:"012",
+			playerBSecret:"345"
+		}),env);
+		const sj=await start.json() as any;
+		const turn=await route(req("/api/duel/turn",{
+			sessionToken:sj.data.sessionToken,
+			playerAGuess:"345"
+		}),env);
+		const tj=await turn.json() as any;
+		const again=await route(req("/api/duel/turn",{
+			sessionToken:tj.data.sessionToken,
+			playerAGuess:"346"
+		}),env);
+		const aj=await again.json() as any;
+		expect(aj.ok).toBe(false);
+		expect(aj.error.code).toBe("BAD_REQUEST");
+	});
 });

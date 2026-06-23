@@ -69,6 +69,10 @@
 					<p>The user provides a human secret, both sides take turns guessing, and the server validates feedback for the computer's guesses.</p>
 				</div>
 				<div class="card">
+					<h3>Two-player duel</h3>
+					<p>Two human players submit their secrets, then each guesses the other secret. The server computes both feedback streams and compares attempt counts.</p>
+				</div>
+				<div class="card">
 					<h3>Precomputed assets</h3>
 					<p>Candidate codebooks and decision trees are stored as Workers Static Assets and loaded lazily through the ASSETS binding.</p>
 				</div>
@@ -134,6 +138,13 @@
 			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/human/guess \
 	-H "content-type: application/json" \
 	-d '{"sessionToken":"...","guess":"1234"}'</pre>
+			<h3>Two-player duel</h3>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/duel/start \
+	-H "content-type: application/json" \
+	-d '{"n":3,"playerASecret":"012","playerBSecret":"345","playerAName":"Ada","playerBName":"Ben"}'</pre>
+			<pre>curl -X POST https://bulls-cows-api.lzray.cloud/api/duel/turn \
+	-H "content-type: application/json" \
+	-d '{"sessionToken":"...","playerAGuess":"345","playerBGuess":"012"}'</pre>
 		</section>
 
 		<section>
@@ -170,6 +181,21 @@ ws.send(JSON.stringify({
 	id:"turn1",
 	type:"turn",
 	payload:{humanGuess:"5678",computerFeedback:{a:1,b:1}}
+}));</pre>
+			<h3>Duel /ws/duel</h3>
+			<pre>const ws=new WebSocket("wss://bulls-cows-api.lzray.cloud/ws/duel");
+ws.onmessage=ev=>console.log(JSON.parse(ev.data));
+ws.onopen=()=>{
+	ws.send(JSON.stringify({
+		id:"start",
+		type:"start",
+		payload:{n:3,playerASecret:"012",playerBSecret:"345",playerAName:"Ada",playerBName:"Ben"}
+	}));
+};
+ws.send(JSON.stringify({
+	id:"turn1",
+	type:"turn",
+	payload:{playerAGuess:"345",playerBGuess:"012"}
 }));</pre>
 		</section>
 

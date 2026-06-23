@@ -1,5 +1,5 @@
 import type {Engine,Env,Feedback,HistItem,Mode,N,SolveOptions,Strategy} from "./types";
-import type {PvpToken,SessionToken} from "./cryptoToken";
+import type {DuelToken,PvpToken,SessionToken} from "./cryptoToken";
 import {ApiError} from "./errors";
 import {assert_engine,assert_feedback,assert_guess,assert_history,assert_n,assert_strategy,first_guess} from "./validation";
 import {calc_feedback,enum_candidates,next_dynamic_engine} from "./wasm/bindings";
@@ -149,6 +149,92 @@ async function pvp_turn(env:Env,token:string,payload:unknown) {
 	};
 }
 
+function duel_name(v:unknown,def:string):string {
+	if (v===undefined||v===null) return def;
+	if (typeof v!=="string") throw new ApiError("BAD_REQUEST",`${def}Name must be string`);
+	const s=v.trim();
+	if (s.length<1||s.length>40) throw new ApiError("BAD_REQUEST",`${def}Name must be 1 to 40 characters`);
+	return s;
+}
+
+function duel_winner(st:DuelToken):"playerA"|"playerB"|"tie"|null {
+	if (st.playerASolved&&st.playerBSolved) {
+		if (st.playerAAttempts===st.playerBAttempts) return "tie";
+		return st.playerAAttempts<st.playerBAttempts?"playerA":"playerB";
+	}
+	if (st.playerASolved&&st.playerBAttempts>=st.playerAAttempts) return "playerA";
+	if (st.playerBSolved&&st.playerAAttempts>=st.playerBAttempts) return "playerB";
+	return null;
+}
+
+function duel_summary(st:DuelToken) {
+	const winner=duel_winner(st);
+	return {
+		n:st.n,
+		playerAName:st.playerAName??"playerA",
+		playerBName:st.playerBName??"playerB",
+		playerAAttempts:st.playerAAttempts,
+		playerBAttempts:st.playerBAttempts,
+		playerASolved:st.playerASolved,
+		playerBSolved:st.playerBSolved,
+		winner,
+		finished:winner!==null,
+		round:Math.max(st.playerAAttempts,st.playerBAttempts)
+	};
+}
+
+function duel_play(st:DuelToken,player:"playerA"|"playerB",raw:unknown) {
+	if (duel_winner(st)!==null) throw new ApiError("BAD_REQUEST","duel is already finished");
+	const guess=assert_guess(st.n,raw,`${player}Guess`);
+	if (player==="playerA") {
+		if (st.playerASolved) throw new ApiError("BAD_REQUEST","playerA has already solved");
+		const fb=calc_feedback(st.n,st.playerBSecret,guess);
+		st.playerAAttempts++;
+		st.playerASolved=fb.a===st.n;
+		st.history.push({player,guess,a:fb.a,b:fb.b,round:st.playerAAttempts});
+		return {guess,a:fb.a,b:fb.b,text:fb.text,attempts:st.playerAAttempts,solved:st.playerASolved};
+	}
+	if (st.playerBSolved) throw new ApiError("BAD_REQUEST","playerB has already solved");
+	const fb=calc_feedback(st.n,st.playerASecret,guess);
+	st.playerBAttempts++;
+	st.playerBSolved=fb.a===st.n;
+	st.history.push({player,guess,a:fb.a,b:fb.b,round:st.playerBAttempts});
+	return {guess,a:fb.a,b:fb.b,text:fb.text,attempts:st.playerBAttempts,solved:st.playerBSolved};
+}
+
+async function duel_start(env:Env,payload:unknown) {
+	const r=(payload&&typeof payload==="object"?payload:{}) as Record<string,unknown>;
+	const n=assert_n(r.n);
+	const st:DuelToken={
+		kind:"duel",
+		n,
+		playerASecret:assert_guess(n,r.playerASecret,"playerASecret"),
+		playerBSecret:assert_guess(n,r.playerBSecret,"playerBSecret"),
+		playerAName:duel_name(r.playerAName,"playerA"),
+		playerBName:duel_name(r.playerBName,"playerB"),
+		playerAAttempts:0,
+		playerBAttempts:0,
+		playerASolved:false,
+		playerBSolved:false,
+		createdAt:Math.floor(Date.now()/1000),
+		history:[]
+	};
+	const token=await seal(env,st as SessionToken);
+	return {token,data:{sessionToken:"",...duel_summary(st)}};
+}
+
+async function duel_turn(env:Env,token:string,payload:unknown) {
+	const r=(payload&&typeof payload==="object"?payload:{}) as Record<string,unknown>;
+	const st=await open_token<DuelToken>(env,token,"duel");
+	const hasA=r.playerAGuess!==undefined&&r.playerAGuess!==null;
+	const hasB=r.playerBGuess!==undefined&&r.playerBGuess!==null;
+	if (!hasA&&!hasB) throw new ApiError("BAD_REQUEST","at least one player guess is required");
+	const playerAFeedback=hasA?duel_play(st,"playerA",r.playerAGuess):null;
+	const playerBFeedback=hasB?duel_play(st,"playerB",r.playerBGuess):null;
+	const next=await seal(env,st);
+	return {token:next,data:{sessionToken:"",playerAFeedback,playerBFeedback,history:st.history,...duel_summary(st)}};
+}
+
 function parse_msg(data:unknown):WsMsg {
 	if (typeof data!=="string") throw new ApiError("BAD_REQUEST","websocket message must be text json");
 	const msg=JSON.parse(data) as WsMsg;
@@ -206,14 +292,46 @@ function setup_pvp(ws:WebSocket,env:Env) {
 	send_ok(ws,null,{ready:true,endpoint:"pvp",types:["ping","start","turn"]});
 }
 
+function setup_duel(ws:WebSocket,env:Env) {
+	let sessionToken:string|null=null;
+	ws.addEventListener("message",ev=>{
+		void (async()=>{
+			let msg:WsMsg={};
+			try {
+				msg=parse_msg(ev.data);
+				if (msg.type==="ping") {
+					send_ok(ws,msg.id,{pong:true});
+				}else if (msg.type==="start") {
+					const res=await duel_start(env,msg.payload);
+					sessionToken=res.token;
+					send_ok(ws,msg.id,{...res.data,sessionToken});
+				}else if (msg.type==="turn") {
+					const r=(msg.payload&&typeof msg.payload==="object"?msg.payload:{}) as Record<string,unknown>;
+					const tok=typeof r.sessionToken==="string"?r.sessionToken:sessionToken;
+					if (!tok) throw new ApiError("TOKEN_INVALID","duel session has not started");
+					const res=await duel_turn(env,tok,msg.payload);
+					sessionToken=res.token;
+					send_ok(ws,msg.id,{...res.data,sessionToken});
+				}else{
+					throw new ApiError("BAD_REQUEST","unknown websocket message type");
+				}
+			}catch(e) {
+				send_err(ws,msg.id,e);
+			}
+		})();
+	});
+	send_ok(ws,null,{ready:true,endpoint:"duel",types:["ping","start","turn"]});
+}
+
 export function websocket_route(req:Request,env:Env,url:URL):Response|null {
 	if (req.headers.get("upgrade")?.toLowerCase()!=="websocket") return null;
-	if (url.pathname!=="/ws/solve"&&url.pathname!=="/ws/pvp") return null;
+	if (url.pathname!=="/ws/solve"&&url.pathname!=="/ws/pvp"&&url.pathname!=="/ws/duel") return null;
 	const pair=new WebSocketPair();
 	const client=pair[0];
 	const server=pair[1];
 	server.accept();
 	if (url.pathname==="/ws/solve") setup_solve(server,env);
-	else setup_pvp(server,env);
+	else if (url.pathname==="/ws/pvp") setup_pvp(server,env);
+	else setup_duel(server,env);
 	return new Response(null,{status:101,webSocket:client});
 }

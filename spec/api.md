@@ -303,6 +303,73 @@ Response data:
 }
 ```
 
+## POST /api/duel/start
+
+Starts a two-player human duel. Player A gives a secret for Player B to guess, and Player B gives a secret for Player A to guess. Both secrets are encrypted into the stateless session token.
+
+Request:
+
+```json
+{
+	"n":3,
+	"playerASecret":"012",
+	"playerBSecret":"345",
+	"playerAName":"Ada",
+	"playerBName":"Ben"
+}
+```
+
+Response data:
+
+```json
+{
+	"sessionToken":"...",
+	"n":3,
+	"playerAName":"Ada",
+	"playerBName":"Ben",
+	"playerAAttempts":0,
+	"playerBAttempts":0,
+	"playerASolved":false,
+	"playerBSolved":false,
+	"winner":null,
+	"finished":false,
+	"round":0
+}
+```
+
+## POST /api/duel/turn
+
+Submits one or both player guesses. `playerAGuess` is Player A guessing Player B's secret. `playerBGuess` is Player B guessing Player A's secret. At least one guess is required. A player who has already solved cannot submit another guess.
+
+Request:
+
+```json
+{
+	"sessionToken":"...",
+	"playerAGuess":"345",
+	"playerBGuess":"012"
+}
+```
+
+Response data:
+
+```json
+{
+	"sessionToken":"...",
+	"playerAFeedback":{"guess":"345","a":3,"b":0,"text":"3A0B","attempts":1,"solved":true},
+	"playerBFeedback":{"guess":"012","a":3,"b":0,"text":"3A0B","attempts":1,"solved":true},
+	"playerAAttempts":1,
+	"playerBAttempts":1,
+	"playerASolved":true,
+	"playerBSolved":true,
+	"winner":"tie",
+	"finished":true,
+	"round":1
+}
+```
+
+Winner is `playerA`, `playerB`, `tie`, or `null`. If both players solve, the lower attempt count wins; equal attempts are a tie. If only one player has solved, the winner remains `null` until the other player has used enough attempts that the result can no longer change.
+
 ## WebSocket /ws/solve
 
 Text JSON messages:
@@ -330,3 +397,17 @@ For dynamic PVP, use `"computerEngine":"wasm"` or `"engine":"wasm"` in `start` o
 ```
 
 The connection keeps the latest encrypted session token. A client may also include `sessionToken` in `turn` payload to restore state. `engine` or `computerEngine` may be included in `turn` to switch between `js` and `wasm` for future dynamic computer guesses.
+
+## WebSocket /ws/duel
+
+Text JSON messages:
+
+```json
+{"id":"start","type":"start","payload":{"n":3,"playerASecret":"012","playerBSecret":"345","playerAName":"Ada","playerBName":"Ben"}}
+```
+
+```json
+{"id":"turn1","type":"turn","payload":{"playerAGuess":"345","playerBGuess":"012"}}
+```
+
+The connection keeps the latest encrypted duel token. A client may include `sessionToken` in a `turn` payload to restore state on a new WebSocket connection.
